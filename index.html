@@ -148,20 +148,38 @@
         
         .nav-mark {
             font-family: 'Anton', sans-serif;
-            font-size: 22px;
-            letter-spacing: 1px;
-            display: flex;
+            font-size: 21px;
+            letter-spacing: 1.5px;
+            display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 11px;
         }
         
-        .nav-mark span {
+        .nav-mark .dot {
             display: inline-block;
-            width: 9px;
-            height: 9px;
+            width: 8px;
+            height: 8px;
+            flex: none;
             background: var(--red);
             border-radius: 50%;
             box-shadow: 0 0 10px var(--red);
+        }
+        
+        .nav-mark .word {
+            color: var(--paper);
+        }
+        
+        .nav-mark .kanji-tag {
+            font-family: 'Noto Sans JP', sans-serif;
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 1px;
+            line-height: 1;
+            color: var(--cyan);
+            border: 1px solid var(--cyan-dim);
+            background: rgba(0, 224, 255, 0.08);
+            padding: 5px 8px 4px;
+            border-radius: 3px;
         }
         
         .nav-links {
@@ -264,7 +282,7 @@
         }
         
         .hero-title {
-            font-size: clamp(52px, 9vw, 118px);
+            font-size: clamp(68px, 15vw, 118px);
             color: var(--paper);
             -webkit-text-stroke: 1.5px var(--paper);
         }
@@ -295,24 +313,55 @@
         }
         
         .meta-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+            gap: 12px;
             margin-top: 42px;
-            border-top: 1px solid var(--panel-edge);
         }
         
-        .meta-tags div {
-            flex: 1 1 140px;
-            padding: 16px 18px 0 0;
-            border-right: 1px solid var(--panel-edge);
+        .meta-card {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(160deg, rgba(49, 33, 92, 0.35), rgba(20, 11, 46, 0.5));
+            border: 1px solid var(--panel-edge);
+            border-radius: 3px;
+            padding: 14px 16px 13px;
+            transition: border-color .25s ease, transform .25s ease;
         }
         
-        .meta-tags div:last-child {
-            border-right: none;
+        .meta-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 100%;
+            background: var(--cyan);
+        }
+        
+        .meta-card:nth-child(even)::before {
+            background: var(--red);
+        }
+        
+        .meta-card:hover {
+            border-color: var(--cyan-dim);
+            transform: translateY(-2px);
+        }
+        
+        .meta-card .kanji-mark {
+            position: absolute;
+            top: 6px;
+            right: 9px;
+            font-family: 'Noto Sans JP', sans-serif;
+            font-size: 24px;
+            font-weight: 900;
+            line-height: 1;
+            color: var(--paper);
+            opacity: 0.08;
         }
         
         .meta-label {
+            position: relative;
             font-size: 11px;
             letter-spacing: 2px;
             color: var(--red);
@@ -320,7 +369,12 @@
             margin-bottom: 6px;
         }
         
+        .meta-card:nth-child(even) .meta-label {
+            color: var(--cyan);
+        }
+        
         .meta-value {
+            position: relative;
             font-size: 14px;
             color: var(--paper);
             font-weight: 500;
@@ -369,6 +423,7 @@
             cursor: pointer;
             isolation: isolate;
             box-shadow: 0 30px 60px rgba(0, 0, 0, 0.55);
+            touch-action: none;
         }
         
         .char-card .halftone {
@@ -1346,12 +1401,8 @@
                 gap: 14px;
                 font-size: 12px;
             }
-            .meta-tags div {
-                flex: 1 1 100%;
-                border-right: none;
-                border-bottom: 1px solid var(--panel-edge);
-                padding-bottom: 12px;
-                margin-bottom: 12px;
+            .meta-tags {
+                grid-template-columns: repeat(2, 1fr);
             }
             .comments-section {
                 padding: 90px 0;
@@ -1368,7 +1419,11 @@
         @media (max-width:400px) {
             .nav-mark {
                 font-size: 17px;
-                gap: 6px;
+                gap: 8px;
+            }
+            .nav-mark .kanji-tag {
+                font-size: 10.5px;
+                padding: 4px 6px 3px;
             }
             .nav-links {
                 gap: 9px;
@@ -1515,7 +1570,7 @@
 
     <header class="nav">
         <div class="nav-inner">
-            <div class="nav-mark magnetic"><span></span>RAZAEL <span class="jp">呪術</span></div>
+            <div class="nav-mark magnetic"><span class="dot"></span><span class="word">RAZAEL</span><span class="kanji-tag jp">呪術</span></div>
             <nav class="nav-links">
                 <a href="#work">TECHNIQUES</a>
                 <a href="#studio">STUDIO</a>
@@ -1538,17 +1593,25 @@
                 <p class="hero-sub">Interactive design and video editing crafted like a cursed technique — kinetic, dangerous, and impossible to look away from. Every project begins with an incantation, then gets structured underneath.</p>
 
                 <div class="meta-tags">
-                    <div>
+                    <div class="meta-card">
+                        <span class="kanji-mark jp">名</span>
                         <div class="meta-label">NAME</div>
                         <div class="meta-value magnetic">Khaidar Sinan As-Shidqii</div>
                     </div>
-                    <div>
+                    <div class="meta-card">
+                        <span class="kanji-mark jp">術</span>
                         <div class="meta-label">TECHNIQUE</div>
                         <div class="meta-value magnetic">Video Editing</div>
                     </div>
-                    <div>
-                        <div class="meta-label">GRADE</div>
-                        <div class="meta-value magnetic">SMK N 1 Wonosobo · 17 y/o</div>
+                    <div class="meta-card">
+                        <span class="kanji-mark jp">学</span>
+                        <div class="meta-label">SCHOOL</div>
+                        <div class="meta-value magnetic">SMK N 1 Wonosobo</div>
+                    </div>
+                    <div class="meta-card">
+                        <span class="kanji-mark jp">齢</span>
+                        <div class="meta-label">AGE</div>
+                        <div class="meta-value magnetic">17 y/o</div>
                     </div>
                 </div>
             </div>
@@ -1793,6 +1856,36 @@
                 targetReveal = 130;
             });
             card.addEventListener('mouseleave', () => {
+                targetReveal = 0;
+                hasMouse = false;
+            });
+
+            // Touch support: a finger dragged across the card reveals the
+            // mask the same way the cursor does on desktop. touch-action:none
+            // on .char-card stops the page from trying to scroll/pan while
+            // the finger is on the card, so the drag feels smooth instead of
+            // fighting the browser's own gesture handling.
+            function moveFromTouch(e) {
+                const t = e.touches && e.touches[0];
+                if (!t) return;
+                const r = card.getBoundingClientRect();
+                targetMx = ((t.clientX - r.left) / r.width) * 100;
+                targetMy = ((t.clientY - r.top) / r.height) * 100;
+                hasMouse = true;
+                targetReveal = 130;
+                e.preventDefault();
+            }
+            card.addEventListener('touchstart', moveFromTouch, {
+                passive: false
+            });
+            card.addEventListener('touchmove', moveFromTouch, {
+                passive: false
+            });
+            card.addEventListener('touchend', () => {
+                targetReveal = 0;
+                hasMouse = false;
+            });
+            card.addEventListener('touchcancel', () => {
                 targetReveal = 0;
                 hasMouse = false;
             });
