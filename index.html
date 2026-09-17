@@ -1291,6 +1291,13 @@
             transform: translateY(0);
         }
         
+        .comment-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
         .comment-note {
             font-size: 12px;
             color: var(--paper-dim);
@@ -1802,10 +1809,10 @@
                 <input type="text" id="commentName" class="comment-input" placeholder="Nama kamu" maxlength="40" required>
                 <textarea id="commentText" class="comment-textarea" placeholder="Tulis komentar atau masukan..." maxlength="500" required></textarea>
                 <button type="submit" class="comment-submit">KIRIM KOMENTAR</button>
-                <div class="comment-note">Komentar tersimpan di browser ini &amp; otomatis diteruskan lewat WhatsApp supaya beneran kebaca.</div>
+                <div class="comment-note">Komentar tersimpan online &amp; langsung tampil untuk semua pengunjung situs ini.</div>
             </form>
 
-            <div class="comment-list" id="commentList"></div>
+            <div class="comment-list" id="commentList"><div class="comment-empty">Memuat komentar...</div></div>
         </div>
     </section>
 
@@ -2131,100 +2138,151 @@
             }
             requestAnimationFrame(render);
         })();
-        // ================= VISITOR COMMENTS =================
-        // Saved locally per-browser and forwarded to WhatsApp so real
-        // feedback always reaches Khaidar, even without a backend server.
-        (function commentsFeature() {
-            const STORAGE_KEY = 'ksa_site_comments_v1';
-            const WA_NUMBER = '6287764564235';
-            const listEl = document.getElementById('commentList');
-            const formEl = document.getElementById('commentForm');
-            if (!listEl || !formEl) return;
 
-            const seedComments = [{
-                name: 'Pengunjung',
-                text: 'Portofolionya keren, semangat terus improve videonya!',
-                date: '2026-08-20'
-            }];
+        // ================= VISITOR COMMENTS (Firebase Firestore) =================
+        // Comments are stored in a real online database (Firestore), so
+        // EVERY visitor sees the same comment list in real time — no
+        // WhatsApp redirect, no per-browser storage.
+        //
+        // SETUP REQUIRED before this works — see the setup guide sent
+        // alongside this file. In short:
+        //   1. Create a free project at https://console.firebase.google.com
+        //   2. Add a Web App inside it, copy the firebaseConfig object
+        //   3. Paste it below, replacing the placeholder values
+        //   4. Enable "Firestore Database" and set the security rules
+        //      from the setup guide
+    </script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+        import {
+            getFirestore,
+            collection,
+            addDoc,
+            query,
+            orderBy,
+            limit,
+            onSnapshot,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
-            function loadComments() {
-                try {
-                    const raw = localStorage.getItem(STORAGE_KEY);
-                    return raw ? JSON.parse(raw) : seedComments.slice();
-                } catch (e) {
-                    return seedComments.slice();
-                }
-            }
+        // >>> GANTI SEMUA NILAI DI BAWAH INI dengan config dari project
+        // Firebase kamu sendiri (Project settings > General > Your apps > SDK setup) <<<
+        const firebaseConfig = {
+            apiKey: "GANTI_DENGAN_API_KEY_KAMU",
+            authDomain: "GANTI_DENGAN_PROJECT_ID.firebaseapp.com",
+            projectId: "GANTI_DENGAN_PROJECT_ID",
+            storageBucket: "GANTI_DENGAN_PROJECT_ID.appspot.com",
+            messagingSenderId: "GANTI_DENGAN_SENDER_ID",
+            appId: "GANTI_DENGAN_APP_ID"
+        };
 
-            function saveComments(list) {
-                try {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-                } catch (e) {}
-            }
+        const listEl = document.getElementById('commentList');
+        const formEl = document.getElementById('commentForm');
+        const nameInput = document.getElementById('commentName');
+        const textInput = document.getElementById('commentText');
+        const submitBtn = formEl ? formEl.querySelector('.comment-submit') : null;
 
-            function renderComments(list) {
-                listEl.innerHTML = '';
-                if (!list.length) {
-                    const empty = document.createElement('div');
-                    empty.className = 'comment-empty';
-                    empty.textContent = 'Belum ada komentar. Jadilah yang pertama!';
-                    listEl.appendChild(empty);
-                    return;
-                }
-                list.slice().reverse().forEach((c) => {
-                    const card = document.createElement('div');
-                    card.className = 'comment-card';
-
-                    const head = document.createElement('div');
-                    head.className = 'comment-head';
-
-                    const name = document.createElement('span');
-                    name.className = 'comment-name';
-                    name.textContent = c.name;
-
-                    const date = document.createElement('span');
-                    date.className = 'comment-date';
-                    date.textContent = c.date;
-
-                    head.appendChild(name);
-                    head.appendChild(date);
-
-                    const body = document.createElement('p');
-                    body.className = 'comment-body';
-                    body.textContent = c.text;
-
-                    card.appendChild(head);
-                    card.appendChild(body);
-                    listEl.appendChild(card);
-                });
-            }
-
-            let comments = loadComments();
-            renderComments(comments);
-
-            formEl.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const nameInput = document.getElementById('commentName');
-                const textInput = document.getElementById('commentText');
-                const name = nameInput.value.trim();
-                const text = textInput.value.trim();
-                if (!name || !text) return;
-
-                const dateStr = new Date().toISOString().slice(0, 10);
-                comments.push({
-                    name,
-                    text,
-                    date: dateStr
-                });
-                saveComments(comments);
-                renderComments(comments);
-
-                const waText = encodeURIComponent(`Komentar baru di web dari ${name}: ${text}`);
-                window.open(`https://wa.me/${WA_NUMBER}?text=${waText}`, '_blank');
-
-                formEl.reset();
+        function formatDate(ts) {
+            if (!ts || typeof ts.toDate !== 'function') return 'baru saja';
+            return ts.toDate().toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
             });
-        })();
+        }
+
+        function renderComments(items) {
+            if (!listEl) return;
+            listEl.innerHTML = '';
+            if (!items.length) {
+                const empty = document.createElement('div');
+                empty.className = 'comment-empty';
+                empty.textContent = 'Belum ada komentar. Jadilah yang pertama!';
+                listEl.appendChild(empty);
+                return;
+            }
+            items.forEach((c) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'comment-card';
+
+                const head = document.createElement('div');
+                head.className = 'comment-head';
+
+                const name = document.createElement('span');
+                name.className = 'comment-name';
+                name.textContent = c.name || 'Anonim';
+
+                const date = document.createElement('span');
+                date.className = 'comment-date';
+                date.textContent = formatDate(c.createdAt);
+
+                head.appendChild(name);
+                head.appendChild(date);
+
+                const body = document.createElement('p');
+                body.className = 'comment-body';
+                body.textContent = c.text || '';
+
+                cardEl.appendChild(head);
+                cardEl.appendChild(body);
+                listEl.appendChild(cardEl);
+            });
+        }
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            const commentsCol = collection(db, "comments");
+            const commentsQuery = query(commentsCol, orderBy('createdAt', 'desc'), limit(100));
+
+            onSnapshot(commentsQuery, (snap) => {
+                const items = snap.docs.map((d) => d.data());
+                renderComments(items);
+            }, (err) => {
+                console.error('Firestore error:', err);
+                if (listEl) {
+                    listEl.innerHTML = '<div class="comment-empty">Gagal memuat komentar. Cek koneksi atau konfigurasi Firebase.</div>';
+                }
+            });
+
+            if (formEl) {
+                formEl.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const name = nameInput.value.trim();
+                    const text = textInput.value.trim();
+                    if (!name || !text) return;
+
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.textContent = 'MENGIRIM...';
+                    }
+
+                    try {
+                        await addDoc(commentsCol, {
+                            name: name.slice(0, 40),
+                            text: text.slice(0, 500),
+                            createdAt: serverTimestamp()
+                        });
+                        formEl.reset();
+                    } catch (err) {
+                        console.error('Gagal mengirim komentar:', err);
+                        alert('Gagal mengirim komentar. Coba lagi sebentar lagi.');
+                    } finally {
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = 'KIRIM KOMENTAR';
+                        }
+                    }
+                });
+            }
+        } catch (err) {
+            console.error('Firebase belum dikonfigurasi dengan benar:', err);
+            if (listEl) {
+                listEl.innerHTML = '<div class="comment-empty">Komentar belum aktif — konfigurasi Firebase belum diisi.</div>';
+            }
+        }
+    </script>
+    <script>
         // ================= PROJECT VIDEO PREVIEW =================
         // Plays the matching panel-N.mp4 on hover; falls back silently to
         // the poster image/gradient if that file doesn't exist yet.
